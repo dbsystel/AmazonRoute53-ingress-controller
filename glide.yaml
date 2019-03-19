@@ -1,0 +1,6 @@
+package: github.com/dbsystel/AmazonRoute53-ingress-controller
+import:
+- package: k8s.io/client-go
+- package: github.com/go-kit/kit/log
+- package: github.com/aws/aws-sdk-go
+- package: github.com/dbsystel/kube-controller-dbsystel-go-common

@@ -1,0 +1,12 @@
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: {{ include "AmazonRoute53-ingress-controller.name" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "AmazonRoute53-ingress-controller.name" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "AmazonRoute53-ingress-controller.name" . }}
+  namespace: {{ .Release.Namespace | quote }}

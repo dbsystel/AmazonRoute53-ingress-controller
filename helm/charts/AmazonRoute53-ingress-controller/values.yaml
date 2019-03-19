@@ -1,0 +1,34 @@
+# Default values for route53-controller.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# should be always 1
+replicaCount: 1
+
+image:
+  repository: dockerregistry/devops/amazonroute53-ingress-controller
+  tag: 1.0.0
+
+# If you want to set own AWS Access Key ID just alter "false" to "YOURCUSTOMID"
+accessKey: false
+# If you want to set own AWS Secret Access Key just alter "false" to "YOURCUSTOMKEY"
+secretKey: false
+
+# For safety reasons only Amazon Route53 recods will be created/updated/deleted if they match with the whitelist. Minimum one whitelist (prefix or suffix or both) should be always provided.
+whitelistPrefix: "awesome" # will match with e.g. awesome-myapp.myexampledomain.com
+whitelistSuffix: "mytestdomain.com,mytestdomain.org" # will match with e.g. app1-mytestdomain.com or app1-mytestdomain.org
+
+# Should be always set
+awsRegion: eu-central-1
+
+logLevel: info
+logFormat: json
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+

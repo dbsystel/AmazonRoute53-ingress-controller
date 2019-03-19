@@ -1,0 +1,26 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: myingressresource
+  namespace: mynamespace
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    ingress.net/route53: "true"
+    ingress.net/load-balancer-name: "load-balancer-name"
+
+spec:
+  rules:
+  - host: "example1.local"
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: myservice1
+          servicePort: 80
+  - host: "example2.local"
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: myservice2
+          servicePort: 80
