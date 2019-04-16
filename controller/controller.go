@@ -52,7 +52,7 @@ func (c *Controller) Update(oldobj interface{}, newobj interface{}) {
 
 	level.Debug(c.logger).Log("msg", "Called function: Update")
 
-	if noDifference(oldIngressObj, newIngressObj) {
+	if c.noDifference(oldIngressObj, newIngressObj) {
 		level.Debug(c.logger).Log("msg", "Skipping automatically updated ingress", "ingressName", newIngressObj.Name, "ingressNamespace", newIngressObj.Namespace)
 		return
 	}
@@ -121,21 +121,38 @@ func (c *Controller) getLoadBalancerAttributes(loadBalancername string) (string,
 	return dnsName, hostedZoneNameID
 }
 
-// are the two ingress resources same?
-func noDifference(newIngressObj *v1beta1.Ingress, oldIngressObj *v1beta1.Ingress) bool {
+// are two ingress resources same?
+func (c *Controller) noDifference(newIngressObj *v1beta1.Ingress, oldIngressObj *v1beta1.Ingress) bool {
 	if len(newIngressObj.Spec.Rules) != len(oldIngressObj.Spec.Rules) {
+		newIngressObjContent, _ := json.Marshal(newIngressObj.Spec.Rules)
+		oldIngressObjContent, _ := json.Marshal(oldIngressObj.Spec.Rules)
+		level.Debug(c.logger).Log(
+			"msg", "length of ingressObj spec rules are different",
+			"newIngressObjSpecRulesLength", len(newIngressObj.Spec.Rules),
+			"oldIngressObjSpecRulesLength", len(oldIngressObj.Spec.Rules),
+			"newIngressObjSpecRulesContent", string(newIngressObjContent),
+			"oldIngressObjSpecRulesContent", string(oldIngressObjContent),
+			)
 		return false
 	}
 	for i, ingressRule := range newIngressObj.Spec.Rules {
 		if ingressRule.Host != oldIngressObj.Spec.Rules[i].Host {
+			level.Debug(c.logger).Log(
+				"msg", "ingressObj spec rules host names are different",
+				"newIngressObjHostName", ingressRule.Host,
+				"oldIngressObjHostName", oldIngressObj.Spec.Rules[i].Host,
+			)
 			return false
 		}
 	}
 
-	for k, v := range newIngressObj.Annotations {
-		if strings.HasPrefix(k, "ingress.net") && v != oldIngressObj.Annotations[k] {
-			return false
-		}
+	if newIngressObj.Annotations["ingress.net/load-balancer-name"] != oldIngressObj.Annotations["ingress.net/load-balancer-name"] {
+		level.Debug(c.logger).Log(
+			"msg", "ingressObj annotations load-balancer-name are different",
+			"newIngressObjAnnotation", newIngressObj.Annotations["ingress.net/load-balancer-name"],
+			"oldIngressObjAnnotation", oldIngressObj.Annotations["ingress.net/load-balancer-name"],
+			)
+		return false
 	}
 	return true
 }
