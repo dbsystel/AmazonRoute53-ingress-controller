@@ -1,6 +1,7 @@
 package controller
 
 import (
+  "encoding/json"
 	"regexp"
 	"strconv"
 	"strings"
@@ -121,7 +122,7 @@ func (c *Controller) getLoadBalancerAttributes(loadBalancername string) (string,
 	return dnsName, hostedZoneNameID
 }
 
-// are two ingress resources same?
+// are the two ingress resources same?
 func (c *Controller) noDifference(newIngressObj *v1beta1.Ingress, oldIngressObj *v1beta1.Ingress) bool {
 	if len(newIngressObj.Spec.Rules) != len(oldIngressObj.Spec.Rules) {
 		newIngressObjContent, _ := json.Marshal(newIngressObj.Spec.Rules)
