@@ -50,13 +50,6 @@ Or run `aws configure`, if you have installed the `aws-cli`.
 If you want to deploy the controller via Helm, all three variables can be provided in `values.yaml`, see example installation at our [Helm directory](helm) within this repo.
 
 ## Development
-### Dependencies
-[Glide](https://glide.sh/) is a package management tool for Go. To install dependencies:
-```console
-$ glide update
-$ glide install
-```
-
 ### Build
 ```
 go build -v -i -o ./bin/AmazonRoute53-ingress-controller ./cmd # on Linux
