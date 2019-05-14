@@ -7,7 +7,7 @@ replicaCount: 1
 
 image:
   repository: dockerregistry/devops/amazonroute53-ingress-controller
-  tag: 1.1.0
+  tag: 1.2.0
 
 # If you want to set own AWS Access Key ID just alter "false" to "YOURCUSTOMID"
 accessKey: false
