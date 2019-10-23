@@ -1,7 +1,7 @@
 package controller
 
 import (
-  "encoding/json"
+	"encoding/json"
 	"regexp"
 	"strconv"
 	"strings"
@@ -16,9 +16,10 @@ import (
 
 // define struct
 type Controller struct {
-	logger          log.Logger
-	whitelistPrefix string
-	whitelistSuffix string
+	logger               log.Logger
+	whitelistPrefix      string
+	whitelistSuffix      string
+	hostReferenceCounter map[string]int
 }
 
 // create new object from type Controller and return object pointer
@@ -27,6 +28,7 @@ func New(logger log.Logger, whitelistPrefix string, whitelistSuffix string) *Con
 	controller.logger = logger
 	controller.whitelistPrefix = whitelistPrefix
 	controller.whitelistSuffix = whitelistSuffix
+	controller.hostReferenceCounter = make(map[string]int)
 	return controller
 }
 
@@ -133,7 +135,7 @@ func (c *Controller) noDifference(newIngressObj *v1beta1.Ingress, oldIngressObj 
 			"oldIngressObjSpecRulesLength", len(oldIngressObj.Spec.Rules),
 			"newIngressObjSpecRulesContent", string(newIngressObjContent),
 			"oldIngressObjSpecRulesContent", string(oldIngressObjContent),
-			)
+		)
 		return false
 	}
 	for i, ingressRule := range newIngressObj.Spec.Rules {
@@ -152,7 +154,7 @@ func (c *Controller) noDifference(newIngressObj *v1beta1.Ingress, oldIngressObj 
 			"msg", "ingressObj annotations load-balancer-name are different",
 			"newIngressObjAnnotation", newIngressObj.Annotations["ingress.net/load-balancer-name"],
 			"oldIngressObjAnnotation", oldIngressObj.Annotations["ingress.net/load-balancer-name"],
-			)
+		)
 		return false
 	}
 	return true
@@ -195,6 +197,11 @@ func (c *Controller) deleteRecordSet(ingressObj *v1beta1.Ingress) {
 	for _, ingressRule := range ingressObj.Spec.Rules {
 		level.Info(c.logger).Log("msg", "Deleting Route53 record set", "hostName", ingressRule.Host, "ingressName", ingressRule.Host, "ingressNamespace", ingressObj.Namespace)
 		if c.isInWhitelist(ingressRule.Host) {
+			c.hostReferenceCounter[ingressRule.Host]--
+			if c.hostReferenceCounter[ingressRule.Host] > 0 {
+				level.Info(c.logger).Log("msg", "The hostname "+ingressRule.Host+" still has "+strconv.Itoa(c.hostReferenceCounter[ingressRule.Host])+" copies in the k8s-cluster. Deletion Skipped.")
+				continue
+			}
 			hostedZoneId := c.searchHostedZoneId(ingressRule.Host)
 			level.Debug(c.logger).Log("msg", "Found Hosted Zone ID: ", "hostedzoneid", hostedZoneId)
 
@@ -252,6 +259,8 @@ func (c *Controller) createRecordSet(ingressObj *v1beta1.Ingress) {
 
 			aliasName, aliasHostedZoneId := c.getLoadBalancerAttributes(loadBalancerName)
 			level.Debug(c.logger).Log("aliasName: ", aliasName, "aliasHostedZoneId: ", aliasHostedZoneId)
+
+			c.hostReferenceCounter[ingressRule.Host]++
 
 			result, err := aws.ChangeRecordSet("UPSERT", aliasName, aliasHostedZoneId, ingressRule.Host, hostedZoneId)
 
