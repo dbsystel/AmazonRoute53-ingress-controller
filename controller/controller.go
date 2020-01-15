@@ -8,10 +8,10 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/route53"
-	"github.com/dbsystel/AmazonRoute53-ingress-controller/aws"
+	"github.com/Kirchen99/AmazonRoute53-ingress-controller/aws"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 )
 
 // define struct
