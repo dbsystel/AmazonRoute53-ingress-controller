@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Kirchen99/AmazonRoute53-ingress-controller/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/route53"
-	"github.com/Kirchen99/AmazonRoute53-ingress-controller/aws"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"k8s.io/api/networking/v1beta1"
@@ -16,18 +16,22 @@ import (
 
 // define struct
 type Controller struct {
-	logger               log.Logger
-	whitelistPrefix      string
-	whitelistSuffix      string
+	logger          log.Logger
+	whitelistPrefix string
+	whitelistSuffix string
+	//-TODO: DEPRECATE
+	deleteAlias          bool
 	hostReferenceCounter map[string]int
 }
 
 // create new object from type Controller and return object pointer
-func New(logger log.Logger, whitelistPrefix string, whitelistSuffix string) *Controller {
+func New(logger log.Logger, whitelistPrefix string, whitelistSuffix string, deleteAlilas bool) *Controller {
 	controller := &Controller{}
 	controller.logger = logger
 	controller.whitelistPrefix = whitelistPrefix
 	controller.whitelistSuffix = whitelistSuffix
+	//-TODO: DEPRECATE
+	controller.deleteAlias = deleteAlilas
 	controller.hostReferenceCounter = make(map[string]int)
 	return controller
 }
@@ -88,9 +92,9 @@ func (c *Controller) Delete(obj interface{}) {
 	}
 }
 
-func (c *Controller) searchHostedZoneId(host string) string {
+func (c *Controller) searchHostedZoneID(host string) string {
 
-	hostedZoneId, err := aws.GetHostedZone(host, c.logger)
+	hostedZoneID, err := aws.GetHostedZone(host, c.logger)
 
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
@@ -111,7 +115,7 @@ func (c *Controller) searchHostedZoneId(host string) string {
 		}
 	}
 
-	return hostedZoneId
+	return hostedZoneID
 }
 
 // retrun dnsName and hostedZoneNameID for give load-balancer-name
@@ -193,6 +197,9 @@ func (c *Controller) isInWhitelist(host string) (inWhitelist bool) {
 // delete Amazon Route53 recordset
 func (c *Controller) deleteRecordSet(ingressObj *v1beta1.Ingress) {
 	loadBalancerName, _ := ingressObj.Annotations["ingress.net/load-balancer-name"]
+	alias, _ := ingressObj.Annotations["ingress.net/alias"]
+
+	isAlias, _ := strconv.ParseBool(alias)
 
 	for _, ingressRule := range ingressObj.Spec.Rules {
 		level.Info(c.logger).Log("msg", "Deleting Route53 record set", "hostName", ingressRule.Host, "ingressName", ingressRule.Host, "ingressNamespace", ingressObj.Namespace)
@@ -202,12 +209,12 @@ func (c *Controller) deleteRecordSet(ingressObj *v1beta1.Ingress) {
 				level.Info(c.logger).Log("msg", "The hostname "+ingressRule.Host+" still has "+strconv.Itoa(c.hostReferenceCounter[ingressRule.Host])+" copies in the k8s-cluster. Deletion Skipped.")
 				continue
 			}
-			hostedZoneId := c.searchHostedZoneId(ingressRule.Host)
-			level.Debug(c.logger).Log("msg", "Found Hosted Zone ID: ", "hostedzoneid", hostedZoneId)
+			hostedZoneID := c.searchHostedZoneID(ingressRule.Host)
+			level.Debug(c.logger).Log("msg", "Found Hosted Zone ID: ", "hostedzoneid", hostedZoneID)
 
-			aliasName, aliasHostedZoneId := c.getLoadBalancerAttributes(loadBalancerName)
-			level.Debug(c.logger).Log("aliasName: ", aliasName, "aliasHostedZoneId: ", aliasHostedZoneId)
-			result, err := aws.ChangeRecordSet("DELETE", aliasName, aliasHostedZoneId, ingressRule.Host, hostedZoneId)
+			aliasName, aliasHostedZoneID := c.getLoadBalancerAttributes(loadBalancerName)
+			level.Debug(c.logger).Log("aliasName: ", aliasName, "aliasHostedZoneID: ", aliasHostedZoneID)
+			result, err := aws.ChangeRecordSet("DELETE", aliasName, aliasHostedZoneID, ingressRule.Host, hostedZoneID, isAlias)
 
 			if err != nil {
 				if aerr, ok := err.(awserr.Error); ok {
@@ -249,20 +256,59 @@ func (c *Controller) deleteRecordSet(ingressObj *v1beta1.Ingress) {
 // create Amazon Route53 recordset
 func (c *Controller) createRecordSet(ingressObj *v1beta1.Ingress) {
 	loadBalancerName, _ := ingressObj.Annotations["ingress.net/load-balancer-name"]
+	alias, _ := ingressObj.Annotations["ingress.net/alias"]
+
+	isAlias, _ := strconv.ParseBool(alias)
 
 	for _, ingressRule := range ingressObj.Spec.Rules {
 		level.Info(c.logger).Log("msg", "Creating/Updating Route53 record set", "hostName", ingressRule.Host, "ingressName", ingressObj.Name, "ingressNamespace", ingressObj.Namespace)
 		if c.isInWhitelist(ingressRule.Host) {
 
-			hostedZoneId := c.searchHostedZoneId(ingressRule.Host)
-			level.Debug(c.logger).Log("msg", "Found Hosted Zone ID: ", "hostedzoneid", hostedZoneId)
+			hostedZoneID := c.searchHostedZoneID(ingressRule.Host)
+			level.Debug(c.logger).Log("msg", "Found Hosted Zone ID: ", "hostedzoneid", hostedZoneID)
 
-			aliasName, aliasHostedZoneId := c.getLoadBalancerAttributes(loadBalancerName)
-			level.Debug(c.logger).Log("aliasName: ", aliasName, "aliasHostedZoneId: ", aliasHostedZoneId)
+			aliasName, aliasHostedZoneID := c.getLoadBalancerAttributes(loadBalancerName)
+			level.Debug(c.logger).Log("aliasName: ", aliasName, "aliasHostedZoneID: ", aliasHostedZoneID)
 
 			c.hostReferenceCounter[ingressRule.Host]++
 
-			result, err := aws.ChangeRecordSet("UPSERT", aliasName, aliasHostedZoneId, ingressRule.Host, hostedZoneId)
+			//-TODO: DEPRECATE
+			if c.deleteAlias {
+				level.Info(c.logger).Log("msg", "delete alias recordset before creating cname.")
+				result, err := aws.ChangeRecordSet("DELETE", aliasName, aliasHostedZoneID, ingressRule.Host, hostedZoneID, true)
+				if err != nil {
+					if aerr, ok := err.(awserr.Error); ok {
+						switch aerr.Code() {
+						case route53.ErrCodeNoSuchHostedZone:
+							level.Error(c.logger).Log("err", route53.ErrCodeNoSuchHostedZone, "msg", aerr.Error())
+						case route53.ErrCodeNoSuchHealthCheck:
+							level.Error(c.logger).Log("err", route53.ErrCodeNoSuchHealthCheck, "msg", aerr.Error())
+						case route53.ErrCodeInvalidChangeBatch:
+							re := regexp.MustCompile("but it already exists")
+							if re.Match([]byte(aerr.Error())) {
+								level.Info(c.logger).Log("err", route53.ErrCodeInvalidChangeBatch, "msg", aerr.Error())
+							} else {
+								level.Error(c.logger).Log("err", route53.ErrCodeInvalidChangeBatch, "msg", aerr.Error())
+							}
+						case route53.ErrCodeInvalidInput:
+							level.Error(c.logger).Log("err", route53.ErrCodeInvalidInput, "msg", aerr.Error())
+						case route53.ErrCodePriorRequestNotComplete:
+							level.Error(c.logger).Log("err", route53.ErrCodeInvalidInput, "msg", aerr.Error())
+						default:
+							level.Error(c.logger).Log("msg", aerr.Error())
+						}
+					} else {
+						// Print the error, cast err to awserr.Error to get the Code and
+						// Message from an error.
+						level.Error(c.logger).Log("msg", err.Error())
+					}
+				} else {
+					level.Info(c.logger).Log("msg", result, "hostName", ingressRule.Host, "ingressName", ingressObj.Name, "ingressNamespace", ingressObj.Namespace)
+				}
+
+			}
+
+			result, err := aws.ChangeRecordSet("UPSERT", aliasName, aliasHostedZoneID, ingressRule.Host, hostedZoneID, isAlias)
 
 			if err != nil {
 				if aerr, ok := err.(awserr.Error); ok {
