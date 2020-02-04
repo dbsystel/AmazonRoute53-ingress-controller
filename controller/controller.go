@@ -64,13 +64,20 @@ func (c *Controller) Update(oldobj interface{}, newobj interface{}) {
 		return
 	}
 
+	oldR53, _ := oldIngressObj.Annotations["ingress.net/route53"]
 	r53, _ := newIngressObj.Annotations["ingress.net/route53"]
+
+	isOldR53, _ := strconv.ParseBool(oldR53)
 	isR53, _ := strconv.ParseBool(r53)
 
-	if isR53 {
-		level.Info(c.logger).Log("msg", "Update of an ingress resource detected", "ingressName", newIngressObj.Name, "ingressNamespace", newIngressObj.Namespace)
+	if isOldR53 {
+		level.Info(c.logger).Log("msg", "Update of an ingress resource detected, the old one will be deleted.", "ingressName", oldIngressObj.Name, "ingressNamespace", oldIngressObj.Namespace)
 
 		c.deleteRecordSet(oldIngressObj)
+	}
+
+	if isR53 {
+		level.Info(c.logger).Log("msg", "Update of an ingress resource detected, the new one will be created.", "ingressName", newIngressObj.Name, "ingressNamespace", newIngressObj.Namespace)
 
 		c.createRecordSet(newIngressObj)
 	}
@@ -153,6 +160,15 @@ func (c *Controller) noDifference(newIngressObj *v1beta1.Ingress, oldIngressObj 
 		}
 	}
 
+	if newIngressObj.Annotations["ingress.net/route53"] != oldIngressObj.Annotations["ingress.net/route53"] {
+		level.Debug(c.logger).Log(
+			"msg", "ingressObj annotations route53 are different",
+			"newIngressObjAnnotation", newIngressObj.Annotations["ingress.net/route53"],
+			"oldIngressObjAnnotation", oldIngressObj.Annotations["ingress.net/route53"],
+		)
+		return false
+	}
+
 	if newIngressObj.Annotations["ingress.net/load-balancer-name"] != oldIngressObj.Annotations["ingress.net/load-balancer-name"] {
 		level.Debug(c.logger).Log(
 			"msg", "ingressObj annotations load-balancer-name are different",
@@ -161,6 +177,16 @@ func (c *Controller) noDifference(newIngressObj *v1beta1.Ingress, oldIngressObj 
 		)
 		return false
 	}
+
+	if newIngressObj.Annotations["ingress.net/alias"] != oldIngressObj.Annotations["ingress.net/alias"] {
+		level.Debug(c.logger).Log(
+			"msg", "ingressObj annotations alias are different",
+			"newIngressObjAnnotation", newIngressObj.Annotations["ingress.net/alias"],
+			"oldIngressObjAnnotation", oldIngressObj.Annotations["ingress.net/alias"],
+		)
+		return false
+	}
+
 	return true
 }
 
