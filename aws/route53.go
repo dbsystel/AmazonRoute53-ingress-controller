@@ -19,8 +19,8 @@ type HostedZone struct {
 }
 
 //
-func constructResourceRecordSet(aliasName, aliasHostedZoneID, name string, isAlias bool) (resourceRecordSet *route53.ResourceRecordSet) {
-	if isAlias {
+func constructResourceRecordSet(aliasName, aliasHostedZoneID, name string, dnsType string) (resourceRecordSet *route53.ResourceRecordSet) {
+	if strings.ToUpper(dnsType) == "ALIAS" {
 		resourceRecordSet = &route53.ResourceRecordSet{
 			AliasTarget: &route53.AliasTarget{
 				DNSName:              aws.String(aliasName),
@@ -47,11 +47,11 @@ func constructResourceRecordSet(aliasName, aliasHostedZoneID, name string, isAli
 }
 
 // ChangeRecordSet modifies Amazon Route53 recordset with given state (upsert/delete)
-func ChangeRecordSet(state, aliasName, aliasHostedZoneID, name, hostedZoneID string, isAlias bool) (string, error) {
+func ChangeRecordSet(state, aliasName, aliasHostedZoneID, name, hostedZoneID string, dnsType string) (string, error) {
 	sess := session.Must(session.NewSession())
 	svc := route53.New(sess)
 
-	resourceRecordSet := constructResourceRecordSet(aliasName, aliasHostedZoneID, name, isAlias)
+	resourceRecordSet := constructResourceRecordSet(aliasName, aliasHostedZoneID, name, dnsType)
 
 	input := &route53.ChangeResourceRecordSetsInput{
 		ChangeBatch: &route53.ChangeBatch{

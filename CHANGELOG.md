@@ -1,3 +1,6 @@
+## 1.5.1 / 2020-02-24
+* [CHANGE] Recordset type configurable with parameter
+
 ## 1.5.0 / 2020-02-04
 * [ENHANCEMENT/CHANGE] Add CNAME support
 
