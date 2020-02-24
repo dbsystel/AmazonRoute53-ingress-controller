@@ -8,13 +8,13 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/go-kit/kit/log/level"
-	"github.com/dbsystel/kube-controller-dbsystel-go-common/controller/ingress"
-	"github.com/dbsystel/kube-controller-dbsystel-go-common/kubernetes"
-	k8sflag "github.com/dbsystel/kube-controller-dbsystel-go-common/kubernetes/flag"
+	"github.com/Kirchen99/AmazonRoute53-ingress-controller/controller"
+	"github.com/Kirchen99/kube-controller-dbsystel-go-common/controller/ingress"
+	"github.com/Kirchen99/kube-controller-dbsystel-go-common/kubernetes"
+	k8sflag "github.com/Kirchen99/kube-controller-dbsystel-go-common/kubernetes/flag"
 	opslog "github.com/dbsystel/kube-controller-dbsystel-go-common/log"
 	logflag "github.com/dbsystel/kube-controller-dbsystel-go-common/log/flag"
-	"github.com/dbsystel/AmazonRoute53-ingress-controller/controller"
+	"github.com/go-kit/kit/log/level"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -22,6 +22,9 @@ var (
 	app             = kingpin.New(filepath.Base(os.Args[0]), "AmazonRoute53-ingress-controller")
 	whitelistPrefix = app.Flag("whitelist-prefix", "Whitelist prefix for route53 records").String()
 	whitelistSuffix = app.Flag("whitelist-suffix", "Whitelist suffix for route53 records").String()
+	deleteAlias     = app.Flag("delete-alias", "if true, recordset type alias will be deleted before other recordset type being created.").Bool()
+	deleteCname     = app.Flag("delete-cname", "if true, recordset type cname will be deleted before other recordset type being created.").Bool()
+	dNSType         = app.Flag("dns-type", "DNS Record Type(alias / cname)").Default("cname").String()
 	//Here you can define more flags for your application
 )
 
@@ -67,7 +70,8 @@ func main() {
 
 	//Initialize new k8s ingress-controller from common k8s package
 	ingressController := &ingress.IngressController{}
-	ingressController.Controller = controller.New(logger, *whitelistPrefix, *whitelistSuffix)
+	//-TODO: DEPRECATE
+	ingressController.Controller = controller.New(logger, *whitelistPrefix, *whitelistSuffix, *deleteAlias, *deleteCname, *dNSType)
 	ingressController.Initialize(k8sClient)
 	//Run initiated ingress-controller as go routine
 	go ingressController.Run(stop, wg)
