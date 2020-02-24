@@ -23,6 +23,9 @@ Mentioned `"false"` values can be also specified with: `"0", "f", "F", "false", 
 --log-format # desired log format, one of: [json, logfmt]
 --whitelist-prefix # comma sperated list with Amazon Route53 record name prefixes, which has to be matched, before update/delete Amazon Route53 record sets 
 --whitelist-suffix # comma sperated list with Amazon Route53 record name suffixes, which has to be matched, before update/delete Amazon Route53 record sets 
+--delete-alias # if true, recordset type alias will be deleted before other recordset type being created.
+--delete-cname # if true, recordset type cname will be deleted before other recordset type being created.
+--dns-type # DNS Record Type(alias / cname), default cname
 ```
 
 Example:
@@ -52,7 +55,7 @@ If you want to deploy the controller via Helm, all three variables can be provid
 ## Development
 ### Build
 ```
-go build -v -i -o ./bin/AmazonRoute53-ingress-controller ./cmd # on Linux
+CGO_ENABLED=0 go build -v -i -o ./bin/AmazonRoute53-ingress-controller ./cmd # on Linux
 GOOS=linux CGO_ENABLED=0 go build -v -i -o ./bin/AmazonRoute53-ingress-controller ./cmd # on macOS/Windows
 ```
 
