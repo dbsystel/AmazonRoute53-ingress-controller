@@ -17,8 +17,8 @@ import (
 // Controller defines struct
 type Controller struct {
 	logger               log.Logger
-	whitelistPrefix      string
-	whitelistSuffix      string
+	allowlistPrefix      string
+	allowlistSuffix      string
 	deleteAlias          bool
 	deleteCname          bool
 	dnsType              string
@@ -26,11 +26,11 @@ type Controller struct {
 }
 
 // New creates a new object from type Controller and return object pointer
-func New(logger log.Logger, whitelistPrefix string, whitelistSuffix string, deleteAlilas bool, deleteCname bool, dnsType string) *Controller {
+func New(logger log.Logger, allowlistPrefix string, allowlistSuffix string, deleteAlilas bool, deleteCname bool, dnsType string) *Controller {
 	controller := &Controller{}
 	controller.logger = logger
-	controller.whitelistPrefix = whitelistPrefix
-	controller.whitelistSuffix = whitelistSuffix
+	controller.allowlistPrefix = allowlistPrefix
+	controller.allowlistSuffix = allowlistSuffix
 	controller.deleteAlias = deleteAlilas
 	controller.deleteCname = deleteCname
 	controller.dnsType = dnsType
@@ -192,34 +192,34 @@ func (c *Controller) noDifference(newIngressObj *v1beta1.Ingress, oldIngressObj 
 	return true
 }
 
-// check if gice host is in whitelist
-func (c *Controller) isInWhitelist(host string) (inWhitelist bool) {
-	if c.whitelistPrefix != "" {
-		prefixes := strings.Split(c.whitelistPrefix, ",")
+// check if gice host is in allowlist
+func (c *Controller) isInAllowlist(host string) (inAllowlist bool) {
+	if c.allowlistPrefix != "" {
+		prefixes := strings.Split(c.allowlistPrefix, ",")
 		for _, prefix := range prefixes {
 			if prefix == "" {
 				continue
 			}
-			inWhitelist = strings.HasPrefix(host, prefix)
-			if inWhitelist {
+			inAllowlist = strings.HasPrefix(host, prefix)
+			if inAllowlist {
 				break
 			}
 
 		}
 	}
-	if c.whitelistSuffix != "" {
-		suffixes := strings.Split(c.whitelistSuffix, ",")
+	if c.allowlistSuffix != "" {
+		suffixes := strings.Split(c.allowlistSuffix, ",")
 		for _, suffix := range suffixes {
 			if suffix == "" {
 				continue
 			}
-			if inWhitelist {
+			if inAllowlist {
 				break
 			}
-			inWhitelist = strings.HasSuffix(host, suffix)
+			inAllowlist = strings.HasSuffix(host, suffix)
 		}
 	}
-	return inWhitelist
+	return inAllowlist
 }
 
 // delete Amazon Route53 recordset
@@ -228,7 +228,7 @@ func (c *Controller) deleteRecordSet(ingressObj *v1beta1.Ingress) {
 
 	for _, ingressRule := range ingressObj.Spec.Rules {
 		level.Info(c.logger).Log("msg", "Deleting Route53 record set", "hostName", ingressRule.Host, "ingressName", ingressRule.Host, "ingressNamespace", ingressObj.Namespace)
-		if c.isInWhitelist(ingressRule.Host) {
+		if c.isInAllowlist(ingressRule.Host) {
 			c.hostReferenceCounter[ingressRule.Host]--
 			if c.hostReferenceCounter[ingressRule.Host] > 0 {
 				level.Info(c.logger).Log("msg", "The hostname "+ingressRule.Host+" still has "+strconv.Itoa(c.hostReferenceCounter[ingressRule.Host])+" copies in the k8s-cluster. Deletion Skipped.")
@@ -248,7 +248,7 @@ func (c *Controller) deleteRecordSet(ingressObj *v1beta1.Ingress) {
 			}
 
 		} else {
-			level.Info(c.logger).Log("msg", "Provided host "+ingressRule.Host+" is not in whitelist. Skipping deletion!", "hostName", ingressRule.Host, "ingressName", ingressObj.Name, "ingressNamespace", ingressObj.Namespace)
+			level.Info(c.logger).Log("msg", "Provided host "+ingressRule.Host+" is not in allowlist. Skipping deletion!", "hostName", ingressRule.Host, "ingressName", ingressObj.Name, "ingressNamespace", ingressObj.Namespace)
 		}
 	}
 
@@ -260,7 +260,7 @@ func (c *Controller) createRecordSet(ingressObj *v1beta1.Ingress) {
 
 	for _, ingressRule := range ingressObj.Spec.Rules {
 		level.Info(c.logger).Log("msg", "Creating/Updating Route53 record set", "hostName", ingressRule.Host, "ingressName", ingressObj.Name, "ingressNamespace", ingressObj.Namespace)
-		if c.isInWhitelist(ingressRule.Host) {
+		if c.isInAllowlist(ingressRule.Host) {
 
 			hostedZoneID := c.searchHostedZoneID(ingressRule.Host)
 			level.Debug(c.logger).Log("msg", "Found Hosted Zone ID: ", "hostedzoneid", hostedZoneID)
@@ -298,7 +298,7 @@ func (c *Controller) createRecordSet(ingressObj *v1beta1.Ingress) {
 				level.Info(c.logger).Log("msg", result, "hostName", ingressRule.Host, "ingressName", ingressObj.Name, "ingressNamespace", ingressObj.Namespace)
 			}
 		} else {
-			level.Info(c.logger).Log("msg", "Provided host "+ingressRule.Host+" is not in whitelist. Skipping creation/updating!", "hostName", ingressRule.Host, "ingressName", ingressObj.Name, "ingressNamespace", ingressObj.Namespace)
+			level.Info(c.logger).Log("msg", "Provided host "+ingressRule.Host+" is not in allowlist. Skipping creation/updating!", "hostName", ingressRule.Host, "ingressName", ingressObj.Name, "ingressNamespace", ingressObj.Namespace)
 		}
 	}
 }

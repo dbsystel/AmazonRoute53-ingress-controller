@@ -27,11 +27,11 @@ spec:
           args:
             - "--log-level={{ .Values.logLevel }}"
             - "--log-format={{ .Values.logFormat }}"
-{{ if .Values.whitelistPrefix }}
-            - "--whitelist-prefix={{ .Values.whitelistPrefix }}"
+{{ if .Values.allowlistPrefix }}
+            - "--allowlist-prefix={{ .Values.allowlistPrefix }}"
 {{ end }}
-{{ if .Values.whitelistSuffix }}
-            - "--whitelist-suffix={{ .Values.whitelistSuffix }}"
+{{ if .Values.allowlistSuffix }}
+            - "--allowlist-suffix={{ .Values.allowlistSuffix }}"
 {{ end }}
           env:
 {{ if .Values.accessKey }}

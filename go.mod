@@ -1,4 +1,4 @@
-module github.com/Kirchen99/AmazonRoute53-ingress-controller
+module github.com/dbsystel/AmazonRoute53-ingress-controller
 
 go 1.12
 
