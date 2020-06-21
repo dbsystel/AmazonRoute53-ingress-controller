@@ -1,3 +1,6 @@
+# 1.6.0 / 2020-06-21
+* [CHANGE] Replace usages of whitelist
+
 ## 1.5.1 / 2020-02-24
 * [CHANGE] Recordset type configurable with parameter
 
@@ -18,6 +21,3 @@
 
 ## 1.0.0 / 2019-03-19
 * [INITIAL] Initial commit of AmazonRoute53-ingress-controller
-
-
-

@@ -26,7 +26,7 @@ The following table lists the configurable parameters of the AmazonRoute53-ingre
 | Parameter | Description | Default |
 | --- | --- | --- |
 | `image.repository`                      | Image | `dockerregistry/devops/amazonroute53-ingress-controller` |
-| `image.tag`                             | Image tag  | `1.2.0` |
+| `image.tag`                             | Image tag  | `1.6.0` |
 | `logLevel`                              | Desired log level, one of: [debug, info, warn, error]  | `info` |
 | `logFormat`                             | Desired log format, one of: [json, logfmt]  | `json` |
 | `accessKey`                             | If you want to set own AWS Access Key ID just alter "false" to "YOURCUSTOMID"  | `false` |
