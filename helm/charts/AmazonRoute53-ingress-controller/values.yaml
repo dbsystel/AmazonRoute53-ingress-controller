@@ -7,16 +7,16 @@ replicaCount: 1
 
 image:
   repository: dockerregistry/devops/amazonroute53-ingress-controller
-  tag: 1.2.0
+  tag: 1.6.0
 
 # If you want to set own AWS Access Key ID just alter "false" to "YOURCUSTOMID"
 accessKey: false
 # If you want to set own AWS Secret Access Key just alter "false" to "YOURCUSTOMKEY"
 secretKey: false
 
-# For safety reasons only Amazon Route53 recods will be created/updated/deleted if they match with the whitelist. Minimum one whitelist (prefix or suffix or both) should be always provided.
-whitelistPrefix: "awesome" # will match with e.g. awesome-myapp.myexampledomain.com
-whitelistSuffix: "mytestdomain.com,mytestdomain.org" # will match with e.g. app1-mytestdomain.com or app1-mytestdomain.org
+# For safety reasons only Amazon Route53 recods will be created/updated/deleted if they match with the allowlist. Minimum one allowlist (prefix or suffix or both) should be always provided.
+allowlistPrefix: "awesome" # will match with e.g. awesome-myapp.myexampledomain.com
+allowlistSuffix: "mytestdomain.com,mytestdomain.org" # will match with e.g. app1-mytestdomain.com or app1-mytestdomain.org
 
 # Should be always set
 awsRegion: eu-central-1

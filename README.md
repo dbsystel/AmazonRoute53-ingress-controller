@@ -21,22 +21,22 @@ Mentioned `"false"` values can be also specified with: `"0", "f", "F", "false", 
 --run-outside-cluster # Uses ~/.kube/config rather than in cluster configuration
 --log-level # desired log level, one of: [debug, info, warn, error]
 --log-format # desired log format, one of: [json, logfmt]
---whitelist-prefix # comma sperated list with Amazon Route53 record name prefixes, which has to be matched, before update/delete Amazon Route53 record sets 
---whitelist-suffix # comma sperated list with Amazon Route53 record name suffixes, which has to be matched, before update/delete Amazon Route53 record sets 
+--allowlist-prefix # comma sperated list with Amazon Route53 record name prefixes, which has to be matched, before update/delete Amazon Route53 record sets 
+--allowlist-suffix # comma sperated list with Amazon Route53 record name suffixes, which has to be matched, before update/delete Amazon Route53 record sets 
 --delete-alias # if true, recordset type alias will be deleted before other recordset type being created.
 --delete-cname # if true, recordset type cname will be deleted before other recordset type being created.
 --dns-type # DNS Record Type(alias / cname), default cname
 ```
 
 Example:
-`./bin/AmazonRoute53-ingress-controller --run-outside-cluster --log-level=info --whitelist-suffix=example.local,test.local --whitelist-prefix=app-`
+`./bin/AmazonRoute53-ingress-controller --run-outside-cluster --log-level=info --allowlist-suffix=example.local,test.local --allowlist-prefix=app-`
 
-For example, with provided whitelist the following Amazon Route53 records could be created/updated/deleted:
+For example, with provided allowlist the following Amazon Route53 records could be created/updated/deleted:
 - test.example.local
 - example-test.local
 - app-domain.local
 
-For example, with provided whitelist the following Amazon Route53 records could *not* be created/updated/deleted:
+For example, with provided allowlist the following Amazon Route53 records could *not* be created/updated/deleted:
 - app.domain.local
 - apps-test.local
 

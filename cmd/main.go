@@ -20,8 +20,8 @@ import (
 
 var (
 	app             = kingpin.New(filepath.Base(os.Args[0]), "AmazonRoute53-ingress-controller")
-	whitelistPrefix = app.Flag("whitelist-prefix", "Whitelist prefix for route53 records").String()
-	whitelistSuffix = app.Flag("whitelist-suffix", "Whitelist suffix for route53 records").String()
+	allowlistPrefix = app.Flag("allowlist-prefix", "Allowlist prefix for route53 records").String()
+	allowlistSuffix = app.Flag("allowlist-suffix", "Allowlist suffix for route53 records").String()
 	deleteAlias     = app.Flag("delete-alias", "if true, recordset type alias will be deleted before other recordset type being created.").Bool()
 	deleteCname     = app.Flag("delete-cname", "if true, recordset type cname will be deleted before other recordset type being created.").Bool()
 	dNSType         = app.Flag("dns-type", "DNS Record Type(alias / cname)").Default("cname").String()
@@ -71,7 +71,7 @@ func main() {
 	//Initialize new k8s ingress-controller from common k8s package
 	ingressController := &ingress.IngressController{}
 	//-TODO: DEPRECATE
-	ingressController.Controller = controller.New(logger, *whitelistPrefix, *whitelistSuffix, *deleteAlias, *deleteCname, *dNSType)
+	ingressController.Controller = controller.New(logger, *allowlistPrefix, *allowlistSuffix, *deleteAlias, *deleteCname, *dNSType)
 	ingressController.Initialize(k8sClient)
 	//Run initiated ingress-controller as go routine
 	go ingressController.Run(stop, wg)
