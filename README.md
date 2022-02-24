@@ -1,3 +1,5 @@
+:warning: The project has been archived and is no longer maintained!
+
 # Amazon Route53 Ingress Controller
 
 This Controller watches for new *ingress resources* and if they define the specified annotations as `true`, it will create an Amazon Route53 record set.
